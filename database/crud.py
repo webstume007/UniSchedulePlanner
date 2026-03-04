@@ -31,16 +31,21 @@ def update_global_settings(session: Session, open_time, close_time, jumma_start,
 # ROOM OPERATIONS
 # ==========================================
 
-def add_room(session: Session, name: str, capacity: int, is_lab: bool):
-    """Adds a new classroom or lab to the database."""
+ddef add_room(session, name, capacity, is_lab, available_from, available_to):
     try:
-        new_room = Room(room_name=name, capacity=capacity, is_lab=is_lab)
+        new_room = Room(
+            room_name=name, 
+            capacity=capacity, 
+            is_lab=is_lab,
+            available_from=available_from,
+            available_to=available_to
+        )
         session.add(new_room)
         session.commit()
-        return True, "Room added successfully."
-    except IntegrityError:
+        return True, "Room added successfully!"
+    except Exception as e:
         session.rollback()
-        return False, f"Error: A room with the name '{name}' already exists."
+        return False, str(e)
 
 def get_all_rooms(session: Session):
     return session.query(Room).all()
