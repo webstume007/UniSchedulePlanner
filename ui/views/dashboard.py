@@ -28,7 +28,6 @@ def render_dashboard_page(db_session):
     # ==========================================
     # METRICS ROW
     # ==========================================
-    # We use custom HTML columns to make them look more like IUB brand cards
     m1, m2, m3, m4 = st.columns(4)
     
     with m1:
@@ -74,10 +73,6 @@ def render_dashboard_page(db_session):
     # ==========================================
     # QUICK INSIGHTS
     # ==========================================
-    
-
-[Image of data visualization dashboard metrics]
-
     st.subheader("🔍 Department Insights")
     insight_col1, insight_col2 = st.columns(2)
     
