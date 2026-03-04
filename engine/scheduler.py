@@ -73,12 +73,13 @@ class TimetableEngine:
                     for d_idx, day in enumerate(self.days):
                         for slot in self.slots:
                             
-                            # JUMMA BREAK LOGIC: 
-                            # If Day is Friday (index 4) and slot overlaps with 1:00 PM (hour 13)
-                            # Let's say uni opens at 8 AM. Slot 0 = 8 AM. Slot 5 = 1 PM.
+                            # JUMMA BREAK LOGIC FIX: 
+                            # If uni opens at 8 AM, actual_hour calculates the 24h format time.
                             actual_hour = open_hour + slot
-                            if day == "Friday" and actual_hour >= self.settings.jumma_break_start.hour and actual_hour < self.settings.jumma_break_end.hour:
-                                continue # Skip creating a variable for the Jumma gap entirely
+                            
+                            # Block both 13:00 (1 PM - 2 PM) and 14:00 (2 PM - 3 PM) entirely on Fridays
+                            if day == "Friday" and actual_hour in [13, 14]:
+                                continue
 
                             var_name = f"{lesson['id']}_T{teacher.id}_R{room.id}_D{d_idx}_S{slot}"
                             self.schedule_vars[(lesson["id"], teacher.id, room.id, d_idx, slot)] = self.model.NewBoolVar(var_name)
