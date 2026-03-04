@@ -52,13 +52,14 @@ class Teacher(Base):
     subjects_can_teach = relationship('Subject', secondary=teacher_subject_association, back_populates='capable_teachers')
 
 class Room(Base):
-    """Physical locations for classes and labs."""
     __tablename__ = 'rooms'
-    
     id = Column(Integer, primary_key=True)
-    room_name = Column(String(50), nullable=False, unique=True) # e.g., "AI Lab 1", "Room 304"
+    room_name = Column(String, unique=True, nullable=False)
     capacity = Column(Integer, nullable=False)
     is_lab = Column(Boolean, default=False)
+    # New Fields
+    available_from = Column(Time, default=time(8, 0))
+    available_to = Column(Time, default=time(16, 0))
 
 class Subject(Base):
     """Curriculum details for the AI department."""
