@@ -51,8 +51,8 @@ if selection == "⚙️ Global Settings":
     settings.render_settings_page(st.session_state.db_session)
 
 elif selection == "🏫 Manage Rooms":
-    st.title("🏫 Manage Rooms")
-    st.info("Room management interface will be built next.")
+    from ui.views import rooms
+    rooms.render_rooms_page(st.session_state.db_session)
 
 elif selection == "📚 Manage Subjects":
     st.title("📚 Manage Subjects")
