@@ -25,8 +25,9 @@ if 'db_session' not in st.session_state:
 st.sidebar.title("📅 AI Dept Timetable")
 st.sidebar.markdown("---")
 
-# The menu options
+# The menu options (Synced perfectly with the routing logic below)
 menu_options = [
+    "📊 Dashboard Overview",
     "⚙️ Global Settings",
     "🏫 Manage Rooms",
     "📚 Manage Subjects",
