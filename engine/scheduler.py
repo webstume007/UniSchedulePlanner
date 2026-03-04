@@ -19,10 +19,10 @@ class TimetableEngine:
         if not self.settings.sunday_off:
             self.days.append("Sunday")
             
-        # Calculate timeslots based on university hours (assuming 1 slot = 1 hour for simplicity here)
-        open_hour = self.settings.uni_open_time.hour
-        close_hour = self.settings.uni_close_time.hour
-        self.num_slots_per_day = close_hour - open_hour
+        # Calculate timeslots based on university hours
+        self.open_hour = self.settings.uni_open_time.hour
+        self.close_hour = self.settings.uni_close_time.hour
+        self.num_slots_per_day = self.close_hour - self.open_hour
         
         self.slots = list(range(self.num_slots_per_day))
         
@@ -43,11 +43,9 @@ class TimetableEngine:
         # ---------------------------------------------------------
         # 2. CREATE VARIABLES (The Grid)
         # ---------------------------------------------------------
-        # We break down every subject into individual 1-hour "lessons"
         lessons = []
         for batch in self.batches:
             for subject in batch.curriculum_subjects:
-                # If a subject is 3 credit hours, we create 3 independent lessons
                 for part in range(subject.total_credit_hours):
                     lesson_id = f"B{batch.id}_S{subject.id}_P{part}"
                     lessons.append({
@@ -58,14 +56,11 @@ class TimetableEngine:
                         "strength": batch.student_strength
                     })
 
-        # Create a boolean variable for every possible valid combination
         for lesson in lessons:
-            # Find capable teachers for this specific subject
             capable_teachers = [t for t in self.teachers if any(s.id == lesson["subject_id"] for s in t.subjects_can_teach)]
             if not capable_teachers:
                 return False, f"Error: No teacher assigned for subject ID {lesson['subject_id']}"
 
-            # Find valid rooms (Must fit students, and must match Lab requirement)
             valid_rooms = [r for r in self.rooms if r.capacity >= lesson["strength"] and r.is_lab == lesson["requires_lab"]]
             
             for teacher in capable_teachers:
@@ -73,11 +68,16 @@ class TimetableEngine:
                     for d_idx, day in enumerate(self.days):
                         for slot in self.slots:
                             
-                            # JUMMA BREAK LOGIC FIX: 
-                            # If uni opens at 8 AM, actual_hour calculates the 24h format time.
-                            actual_hour = open_hour + slot
+                            # Calculate the actual 24h format time for this slot
+                            actual_hour = self.open_hour + slot
                             
-                            # Block both 13:00 (1 PM - 2 PM) and 14:00 (2 PM - 3 PM) entirely on Fridays
+                            # --- IUB SPECIFIC CONSTRAINT: ROOM AVAILABILITY ---
+                            # Only create a variable if the specific room is open during this hour
+                            if actual_hour < room.available_from.hour or actual_hour >= room.available_to.hour:
+                                continue
+
+                            # --- IUB SPECIFIC CONSTRAINT: JUMMA BREAK ---
+                            # Block both 13:00 (1 PM) and 14:00 (2 PM) on Fridays
                             if day == "Friday" and actual_hour in [13, 14]:
                                 continue
 
@@ -88,29 +88,28 @@ class TimetableEngine:
         # 3. ADD HARD CONSTRAINTS
         # ---------------------------------------------------------
         
-        # Constraint A: Every single lesson must be scheduled exactly ONCE
+        # Constraint A: Every lesson scheduled exactly ONCE
         for lesson in lessons:
-            lesson_vars = []
-            for key, var in self.schedule_vars.items():
-                if key[0] == lesson["id"]:
-                    lesson_vars.append(var)
+            lesson_vars = [var for key, var in self.schedule_vars.items() if key[0] == lesson["id"]]
+            if not lesson_vars:
+                return False, f"Conflict: {lesson['id']} cannot be scheduled due to room/time restrictions."
             self.model.AddExactlyOne(lesson_vars)
 
-        # Constraint B: A Teacher can only teach ONE class at a time
+        # Constraint B: One teacher per slot
         for teacher in self.teachers:
             for d_idx in range(len(self.days)):
                 for slot in self.slots:
                     teacher_slot_vars = [var for key, var in self.schedule_vars.items() if key[1] == teacher.id and key[3] == d_idx and key[4] == slot]
                     self.model.AddAtMostOne(teacher_slot_vars)
 
-        # Constraint C: A Room can only host ONE class at a time
+        # Constraint C: One room per slot
         for room in self.rooms:
             for d_idx in range(len(self.days)):
                 for slot in self.slots:
                     room_slot_vars = [var for key, var in self.schedule_vars.items() if key[2] == room.id and key[3] == d_idx and key[4] == slot]
                     self.model.AddAtMostOne(room_slot_vars)
 
-        # Constraint D: A Batch (Section) can only attend ONE class at a time
+        # Constraint D: One batch per slot
         for batch in self.batches:
             for d_idx in range(len(self.days)):
                 for slot in self.slots:
@@ -121,19 +120,16 @@ class TimetableEngine:
         # 4. SOLVE THE MODEL
         # ---------------------------------------------------------
         solver = cp_model.CpSolver()
-        # Set a time limit so the server doesn't freeze on impossible inputs
         solver.parameters.max_time_in_seconds = 30.0 
         status = solver.Solve(self.model)
 
         if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-            # Extract the winning schedule
             final_schedule = []
             for key, var in self.schedule_vars.items():
                 if solver.Value(var) == 1:
                     lesson_id, t_id, r_id, d_idx, slot = key
-                    actual_hour = open_hour + slot
+                    actual_hour = self.open_hour + slot
                     
-                    # Parse the lesson string "B1_S2_P0" back into readable data
                     batch_id = int(lesson_id.split('_')[0][1:])
                     subject_id = int(lesson_id.split('_')[1][1:])
                     
@@ -148,4 +144,4 @@ class TimetableEngine:
                     })
             return True, final_schedule
         else:
-            return False, "Algorithm could not find a clash-free combination with the current constraints. Try adding more rooms or teachers."
+            return False, "Could not find a clash-free combination. Check if Room availability windows are too small."
