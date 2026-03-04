@@ -1,6 +1,6 @@
-fastapi
-uvicorn
-sqlalchemy
+streamlit
 pandas
+sqlalchemy
 ortools
-python-dotenv
+openpyxl
+fpdf
