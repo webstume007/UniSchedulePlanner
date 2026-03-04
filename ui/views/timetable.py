@@ -17,6 +17,16 @@ def render_timetable_page(db_session):
             border: 1px solid #d1e7dd; 
             margin-bottom: 25px;
         }
+        .console-log {
+            background-color: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            border: 1px solid #444;
+            margin-top: 10px;
+        }
         .stButton>button { width: 100%; border-radius: 5px; font-weight: bold; }
         </style>
     """, unsafe_allow_html=True)
@@ -33,7 +43,8 @@ def render_timetable_page(db_session):
     with col1:
         st.subheader("Control Panel")
         generate_btn = st.button("⚡ Run AI Algorithm", type="primary")
-        st.caption("Calculation may take a few seconds.")
+        # Placeholder for real-time console
+        log_placeholder = st.empty()
 
     with col2:
         st.info("""
@@ -45,21 +56,26 @@ def render_timetable_page(db_session):
         """)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Use session state to ensure data doesn't vanish on refresh
     if 'generated_schedule' not in st.session_state:
         st.session_state.generated_schedule = None
 
     if generate_btn:
-        with st.spinner("Crunching millions of combinations for IUB..."):
-            engine = TimetableEngine(db_session)
-            success, result = engine.generate()
-            
-            if success:
-                st.session_state.generated_schedule = result
-                st.success("✅ Timetable generated successfully!")
-            else:
-                st.error(f"❌ {result}")
-                st.session_state.generated_schedule = None
+        # Create a callback to update the live log
+        def update_log(message):
+            log_placeholder.markdown(f"<div class='console-log'>> {message}</div>", unsafe_allow_html=True)
+
+        update_log("Initializing AI Engine...")
+        engine = TimetableEngine(db_session, status_callback=update_log)
+        
+        success, result = engine.generate()
+        
+        if success:
+            st.session_state.generated_schedule = result
+            update_log("✅ Optimization Complete! Loading view...")
+            st.success("Timetable generated successfully!")
+        else:
+            st.error(f"❌ {result}")
+            st.session_state.generated_schedule = None
 
     # ==========================================
     # RESULTS & VISUALIZATION SECTION
@@ -97,7 +113,7 @@ def render_timetable_page(db_session):
         day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
         df['Day'] = pd.Categorical(df['Day'], categories=day_order, ordered=True)
 
-        # 3. Semester > Section Grouping Interface
+        # 3. View Selection
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
             "🎓 View by Semester", "👨‍🏫 View by Teacher", "🏫 View by Room", "🗄️ Master Table", "📥 Export"
         ])
@@ -136,17 +152,17 @@ def render_timetable_page(db_session):
             st.subheader("📥 Official Exports")
             exp_col1, exp_col2, exp_col3 = st.columns(3)
 
-            # CSV
+            # CSV Download
             csv_data = df.to_csv(index=False).encode('utf-8')
-            exp_col1.download_button("Download CSV", csv_data, "iub_timetable.csv", "text/csv")
+            exp_col1.download_button("Download CSV", csv_data, "iub_timetable.csv", "text/csv", use_container_width=True)
 
-            # Excel (XLSX)
+            # Excel Download
             xlsx_buffer = io.BytesIO()
             with pd.ExcelWriter(xlsx_buffer, engine='openpyxl') as writer:
                 df.to_excel(writer, index=False, sheet_name='Timetable')
-            exp_col2.download_button("Download XLSX", xlsx_buffer.getvalue(), "iub_timetable.xlsx")
+            exp_col2.download_button("Download XLSX", xlsx_buffer.getvalue(), "iub_timetable.xlsx", use_container_width=True)
 
-            # PDF
+            # PDF Download
             pdf = FPDF()
             pdf.add_page()
             pdf.set_font("Arial", 'B', 14)
@@ -155,4 +171,4 @@ def render_timetable_page(db_session):
             for _, row in df.iterrows():
                 pdf.cell(0, 10, txt=f"{row['Day']} | {row['Time']} | {row['Semester']}-{row['Section']} | {row['Subject']}", ln=True)
             
-            exp_col3.download_button("Download PDF", pdf.output(dest='S').encode('latin-1'), "iub_timetable.pdf", "application/pdf")
+            exp_col3.download_button("Download PDF", pdf.output(dest='S').encode('latin-1'), "iub_timetable.pdf", "application/pdf", use_container_width=True)
