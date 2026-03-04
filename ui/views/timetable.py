@@ -56,7 +56,7 @@ def render_timetable_page(db_session):
         - No teacher/room/batch overlaps.
         - Friday Jumma Break enforced.
         - Room Availability hours respected.
-        - Automatic "Not Assigned" for missing data.
+        - Parallel processing (12-Core Optimization).
         """)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -140,6 +140,8 @@ def render_timetable_page(db_session):
             
             final_view = sem_df[sem_df['Section'] == sel_sec]
             
+            
+            
             try:
                 # Pivot for the classic timetable grid view
                 pivot_grid = final_view.pivot(index="Time", columns="Day", values="Subject").fillna("-")
@@ -164,6 +166,7 @@ def render_timetable_page(db_session):
 
         with tab5:
             st.subheader("📥 Official Exports")
+            
             exp_col1, exp_col2, exp_col3 = st.columns(3)
 
             # CSV Download
@@ -186,7 +189,6 @@ def render_timetable_page(db_session):
             pdf.ln(10)
             
             pdf.set_font("Arial", size=9)
-            # Add headers
             pdf.cell(30, 8, "Day", 1)
             pdf.cell(30, 8, "Time", 1)
             pdf.cell(40, 8, "Class", 1)
@@ -197,7 +199,7 @@ def render_timetable_page(db_session):
                 pdf.cell(30, 8, str(row['Day']), 1)
                 pdf.cell(30, 8, str(row['Time']), 1)
                 pdf.cell(40, 8, f"{row['Semester']}-{row['Section']}", 1)
-                pdf.cell(90, 8, str(row['Subject'][:45]), 1) # Truncate long names
+                pdf.cell(90, 8, str(row['Subject'][:45]), 1)
                 pdf.ln()
             
             exp_col3.download_button("Download PDF", pdf.output(dest='S').encode('latin-1'), "iub_timetable.pdf", "application/pdf", use_container_width=True)
