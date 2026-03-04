@@ -8,20 +8,14 @@ st.set_page_config(
     page_title="IUB AI Dept - Timetable Generator",
     page_icon="📅",
     layout="wide",
-    initial_sidebar_state="collapsed" # We are moving menu to the top
+    initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for IUB Branding (Green & White) and Top Navigation
+# Custom CSS for IUB Branding (Green & White)
 st.markdown("""
     <style>
-    /* IUB Green Theme Colors */
-    :root {
-        --iub-green: #006837;
-    }
-    
+    :root { --iub-green: #006837; }
     .stApp { background-color: #ffffff; }
-    
-    /* Header Styling */
     .iub-header {
         background-color: var(--iub-green);
         color: white;
@@ -31,23 +25,13 @@ st.markdown("""
         margin-bottom: 25px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
-    
-    /* Button Styling */
     div.stButton > button:first-child {
         background-color: var(--iub-green);
         color: white;
         border: none;
     }
-    
-    /* Hide the default sidebar completely */
-    [data-testid="stSidebar"] {
-        display: none;
-    }
-    
-    /* Main container padding */
-    .block-container {
-        padding-top: 2rem;
-    }
+    [data-testid="stSidebar"] { display: none; }
+    .block-container { padding-top: 2rem; }
     </style>
     
     <div class="iub-header">
@@ -63,9 +47,8 @@ if 'db_session' not in st.session_state:
     st.session_state.db_session = init_db()
 
 # -------------------------------------------------------------------
-# TOP NAVIGATION MENU (Replacing Sidebar)
+# TOP NAVIGATION MENU
 # -------------------------------------------------------------------
-# menu_options are kept identical to your previous code for syncing
 menu_options = [
     "📊 Dashboard Overview",
     "⚙️ Global Settings",
@@ -74,15 +57,10 @@ menu_options = [
     "👨‍🏫 Manage Teachers",
     "🎓 Manage Batches",
     "🚀 Generate Timetable",
-    "📥 Bulk Import" # <--- Added this
+    "📥 Bulk Import"
 ]
 
-# ... inside routing logic ...
-elif selection == "📥 Bulk Import":
-    from ui.views import import_data
-    import_data.render_import_page(st.session_state.db_session)
-
-# Using segmented_control for a clean, horizontal top menu
+# This MUST come before the if/elif routing logic
 selection = st.segmented_control(
     "Select Page", 
     options=menu_options, 
@@ -91,10 +69,6 @@ selection = st.segmented_control(
 )
 
 st.markdown("---")
-
-# -------------------------------------------------------------------
-# ROUTING (Loading the correct page based on selection)
-# -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
 # ROUTING (Loading the correct page based on selection)
@@ -132,7 +106,11 @@ elif selection == "📥 Bulk Import":
     from ui.views import import_data
     import_data.render_import_page(st.session_state.db_session)
 
-# Footer
+# -------------------------------------------------------------------
+# FOOTER
+# -------------------------------------------------------------------
+st.markdown("---")
+st.sidebar.info("Developed for The Islamia University of Bahawalpur (IUB) - AI Department.")
 st.markdown("""
     <div style='text-align: center; color: #666; font-size: 0.8rem; margin-top: 50px;'>
         Developed for IUB AI Department © 2026
