@@ -73,8 +73,14 @@ menu_options = [
     "📚 Manage Subjects",
     "👨‍🏫 Manage Teachers",
     "🎓 Manage Batches",
-    "🚀 Generate Timetable"
+    "🚀 Generate Timetable",
+    "📥 Bulk Import" # <--- Added this
 ]
+
+# ... inside routing logic ...
+elif selection == "📥 Bulk Import":
+    from ui.views import import_data
+    import_data.render_import_page(st.session_state.db_session)
 
 # Using segmented_control for a clean, horizontal top menu
 selection = st.segmented_control(
