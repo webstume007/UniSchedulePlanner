@@ -1,37 +1,33 @@
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-from .schema import Teacher, Room, Subject, BatchSection, GlobalSetting
+from database.schema import Room, Subject, Teacher, BatchSection, GlobalSettings
+from datetime import time
 
-# ==========================================
-# GLOBAL SETTINGS OPERATIONS
-# ==========================================
-
-def get_global_settings(session: Session):
-    """Fetches the global settings. Creates default settings if none exist."""
-    settings = session.query(GlobalSetting).first()
+# --- GLOBAL SETTINGS ---
+def get_global_settings(db: Session):
+    settings = db.query(GlobalSettings).first()
     if not settings:
-        settings = GlobalSetting() # Uses defaults from schema.py
-        session.add(settings)
-        session.commit()
+        settings = GlobalSettings()
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
     return settings
 
-def update_global_settings(session: Session, open_time, close_time, jumma_start, jumma_end, credit_mins, sun_off):
-    """Updates the master university rules."""
-    settings = get_global_settings(session)
-    settings.uni_open_time = open_time
-    settings.uni_close_time = close_time
-    settings.jumma_break_start = jumma_start
-    settings.jumma_break_end = jumma_end
-    settings.credit_hour_duration_mins = credit_mins
+def update_global_settings(db: Session, open_t, close_t, j_start, j_end, duration, sun_off):
+    settings = get_global_settings(db)
+    settings.uni_open_time = open_t
+    settings.uni_close_time = close_t
+    settings.jumma_break_start = j_start
+    settings.jumma_break_end = j_end
+    settings.credit_hour_duration_mins = duration
     settings.sunday_off = sun_off
-    session.commit()
-    return settings
+    db.commit()
+    return True
 
-# ==========================================
-# ROOM OPERATIONS
-# ==========================================
+# --- ROOMS ---
+def get_all_rooms(db: Session):
+    return db.query(Room).all()
 
-ddef add_room(session, name, capacity, is_lab, available_from, available_to):
+def add_room(db: Session, name, capacity, is_lab, available_from, available_to):
     try:
         new_room = Room(
             room_name=name, 
@@ -40,96 +36,70 @@ ddef add_room(session, name, capacity, is_lab, available_from, available_to):
             available_from=available_from,
             available_to=available_to
         )
-        session.add(new_room)
-        session.commit()
+        db.add(new_room)
+        db.commit()
         return True, "Room added successfully!"
     except Exception as e:
-        session.rollback()
+        db.rollback()
         return False, str(e)
 
-def get_all_rooms(session: Session):
-    return session.query(Room).all()
-
-def delete_room(session: Session, room_id: int):
-    room = session.query(Room).filter(Room.id == room_id).first()
+def delete_room(db: Session, room_id: int):
+    room = db.query(Room).filter(Room.id == room_id).first()
     if room:
-        session.delete(room)
-        session.commit()
+        db.delete(room)
+        db.commit()
         return True
     return False
 
-# ==========================================
-# SUBJECT OPERATIONS
-# ==========================================
+# --- SUBJECTS ---
+def get_all_subjects(db: Session):
+    return db.query(Subject).all()
 
-def add_subject(session: Session, code: str, name: str, credit_hours: int, requires_lab: bool):
-    """Adds a new course to the curriculum."""
+def add_subject(db: Session, code, name, credit_hours, is_lab):
     try:
         new_subject = Subject(
             course_code=code, 
             subject_name=name, 
             total_credit_hours=credit_hours, 
-            requires_lab=requires_lab
+            requires_lab=is_lab
         )
-        session.add(new_subject)
-        session.commit()
-        return True, "Subject added successfully."
-    except IntegrityError:
-        session.rollback()
-        return False, f"Error: Course code '{code}' already exists."
+        db.add(new_subject)
+        db.commit()
+        return True, "Subject added!"
+    except Exception as e:
+        db.rollback()
+        return False, str(e)
 
-def get_all_subjects(session: Session):
-    return session.query(Subject).all()
+# --- TEACHERS ---
+def get_all_teachers(db: Session):
+    return db.query(Teacher).all()
 
-# ==========================================
-# TEACHER OPERATIONS
-# ==========================================
-
-def add_teacher(session: Session, name: str, cnic: str, contact: str, subject_ids: list):
-    """
-    Adds a teacher and links them to the subjects they are capable of teaching.
-    subject_ids is a list of Subject.id integers.
-    """
+def add_teacher(db: Session, name, cnic, contact, subject_ids):
     try:
         new_teacher = Teacher(name=name, cnic=cnic, contact_number=contact)
-        
-        # Link the selected subjects to this teacher
         if subject_ids:
-            subjects = session.query(Subject).filter(Subject.id.in_(subject_ids)).all()
-            new_teacher.subjects_can_teach.extend(subjects)
-            
-        session.add(new_teacher)
-        session.commit()
-        return True, "Teacher profile created successfully."
-    except IntegrityError:
-        session.rollback()
-        return False, "Error: A teacher with this CNIC already exists."
+            subs = db.query(Subject).filter(Subject.id.in_(subject_ids)).all()
+            new_teacher.subjects_can_teach = subs
+        db.add(new_teacher)
+        db.commit()
+        return True, "Teacher added!"
+    except Exception as e:
+        db.rollback()
+        return False, str(e)
 
-def get_all_teachers(session: Session):
-    return session.query(Teacher).all()
+# --- BATCHES ---
+def get_all_batches(db: Session):
+    return db.query(BatchSection).all()
 
-# ==========================================
-# BATCH / SECTION OPERATIONS
-# ==========================================
-
-def add_batch_section(session: Session, semester: int, section: str, strength: int, subject_ids: list):
-    """
-    Creates a new class (e.g., Semester 3, Section A) and assigns their syllabus.
-    """
+def add_batch_section(db: Session, semester, section, strength, subject_ids):
     try:
         new_batch = BatchSection(semester_level=semester, section_name=section, student_strength=strength)
-        
-        # Link the required curriculum subjects to this batch
         if subject_ids:
-            subjects = session.query(Subject).filter(Subject.id.in_(subject_ids)).all()
-            new_batch.curriculum_subjects.extend(subjects)
-            
-        session.add(new_batch)
-        session.commit()
-        return True, "Batch and curriculum assigned successfully."
+            subs = db.query(Subject).filter(Subject.id.in_(subject_ids)).all()
+            new_batch.curriculum_subjects = subs
+        db.add(new_batch)
+        db.commit()
+        return True, "Batch created!"
     except Exception as e:
-        session.rollback()
-        return False, f"Database Error: {str(e)}"
-
-def get_all_batches(session: Session):
-    return session.query(BatchSection).all()
+        db.rollback()
+        return False, str(e)
