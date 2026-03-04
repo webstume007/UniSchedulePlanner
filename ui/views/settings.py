@@ -37,11 +37,19 @@ def render_settings_page(db_session):
                 max_value=120, 
                 value=current_settings.credit_hour_duration_mins,
                 step=5,
-                help="If a subject is 3 credit hours, and this is set to 60, the algorithm will block 180 minutes."
+                help="If a subject is 3 credit hours, and this is set to 60, the algorithm will block 180 minutes total."
             )
         with col6:
-            st.markdown("<br>", unsafe_allow_html=True) # Just for vertical alignment spacing
-            sun_off = st.checkbox("Keep Sunday Completely Off", value=current_settings.sunday_off)
+            # NEW: Max consecutive hours per day slider
+            max_hours = st.select_slider(
+                "Max Hours Per Subject Per Day",
+                options=[1, 2],
+                value=getattr(current_settings, 'max_hours_per_day', 2),
+                help="Limits how many hours a single subject can take in one day. 2 is recommended for IUB."
+            )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        sun_off = st.checkbox("Keep Sunday Completely Off", value=current_settings.sunday_off)
 
         # Submit button for the form
         submitted = st.form_submit_button("💾 Save Global Settings", use_container_width=True)
@@ -54,13 +62,15 @@ def render_settings_page(db_session):
                 st.error("❌ Jumma Break Start must be earlier than End time.")
             else:
                 # Call the CRUD function to update the database
+                # Note: 'max_hours' is now passed to match the updated CRUD signature
                 update_global_settings(
-                    session=db_session,
-                    open_time=open_time,
-                    close_time=close_time,
-                    jumma_start=jumma_start,
-                    jumma_end=jumma_end,
-                    credit_mins=credit_mins,
+                    db=db_session,
+                    open_t=open_time,
+                    close_t=close_time,
+                    j_start=jumma_start,
+                    j_end=jumma_end,
+                    duration=credit_mins,
+                    max_hours=max_hours,
                     sun_off=sun_off
                 )
                 st.success("✅ Global settings updated successfully! The algorithm will now use these new rules.")
