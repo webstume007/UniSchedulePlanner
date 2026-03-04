@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from database.schema import init_db
 
 # -------------------------------------------------------------------
-# PAGE CONFIGURATION & IUB THEME
+# PAGE CONFIGURATION & THEME
 # -------------------------------------------------------------------
 st.set_page_config(
     page_title="IUB AI Dept - Timetable Generator",
@@ -19,11 +19,24 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for IUB Branding (Green & White)
+# Custom CSS for IUB Branding and Hiding Streamlit Elements
 st.markdown("""
     <style>
+    /* IUB Green Theme Colors */
     :root { --iub-green: #006837; }
     .stApp { background-color: #ffffff; }
+    
+    /* HIDE STREAMLIT ELEMENTS */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    [data-testid="stToolbar"] {display: none;}
+    [data-testid="stDecoration"] {display: none;}
+    [data-testid="stStatusWidget"] {display: none;}
+    [data-testid="manage-app-button"] {display: none !important;}
+    .viewerBadge_container__1QSob {display: none !important;}
+
+    /* IUB Custom Header Styling */
     .iub-header {
         background-color: var(--iub-green);
         color: white;
@@ -33,13 +46,20 @@ st.markdown("""
         margin-bottom: 25px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
+    
+    /* Button Styling */
     div.stButton > button:first-child {
         background-color: var(--iub-green);
         color: white;
         border: none;
+        font-weight: bold;
     }
+    
+    /* Hide the default sidebar if it accidentally pops */
     [data-testid="stSidebar"] { display: none; }
-    .block-container { padding-top: 2rem; }
+    
+    /* Optimize padding */
+    .block-container { padding-top: 1rem; }
     </style>
     
     <div class="iub-header">
@@ -117,9 +137,8 @@ elif selection == "📥 Bulk Import":
 # FOOTER
 # -------------------------------------------------------------------
 st.markdown("---")
-st.sidebar.info("Developed for The Islamia University of Bahawalpur (IUB) - AI Department.")
 st.markdown("""
-    <div style='text-align: center; color: #666; font-size: 0.8rem; margin-top: 50px;'>
-        Developed for IUB AI Department © 2026
+    <div style='text-align: center; color: #666; font-size: 0.8rem; margin-top: 20px;'>
+        Developed for The Islamia University of Bahawalpur (IUB) - AI Department © 2026
     </div>
 """, unsafe_allow_html=True)
