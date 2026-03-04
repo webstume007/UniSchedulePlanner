@@ -60,13 +60,19 @@ def render_timetable_page(db_session):
         # Create a Pandas DataFrame for easy manipulation
         df = pd.DataFrame(formatted_data)
 
-        # Sort logically by Day and Time
-        day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-        df['Day'] = pd.Categorical(df['Day'], categories=day_order, ordered=True)
-        df = df.sort_values(['Batch / Class', 'Day', 'Time']).reset_index(drop=True)
+        # ADDED SAFETY CHECK: Prevent Pandas crash if no data exists
+        if df.empty:
+            st.warning("⚠️ No classes were scheduled. Please ensure you have assigned subjects to batches and teachers.")
+        else:
+            # Sort logically by Day and Time
+            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            df['Day'] = pd.Categorical(df['Day'], categories=day_order, ordered=True)
+            df = df.sort_values(['Batch / Class', 'Day', 'Time']).reset_index(drop=True)
 
-        # 3. Create interactive tabs to view the data from different perspectives
-        tab1, tab2, tab3, tab4 = st.tabs(["🎓 View by Batch", "👨‍🏫 View by Teacher", "🏫 View by Room", "🗄️ Master Table"])
+            # 3. Create interactive tabs to view the data from different perspectives
+            tab1, tab2, tab3, tab4 = st.tabs(["🎓 View by Batch", "👨‍🏫 View by Teacher", "🏫 View by Room", "🗄️ Master Table"])
+            
+            # ... (Keep the rest of your tab1, tab2, tab3, tab4 code exactly the same below this)
 
         with tab1:
             batch_list = df['Batch / Class'].unique()
