@@ -92,7 +92,8 @@ class BatchSection(Base):
 # -------------------------------------------------------------------
 def init_db(database_url="sqlite:///timetable.db"):
     """Initializes the database and creates tables if they don't exist."""
-    engine = create_engine(database_url, echo=False)
+    # ADDED: connect_args={'check_same_thread': False} to prevent Streamlit threading crashes
+    engine = create_engine(database_url, echo=False, connect_args={'check_same_thread': False})
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     return SessionLocal()
