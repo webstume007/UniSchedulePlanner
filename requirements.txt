@@ -1,5 +1,6 @@
-streamlit
-pandas
+fastapi
+uvicorn
 sqlalchemy
-python-dotenv
+pandas
 ortools
+python-dotenv
