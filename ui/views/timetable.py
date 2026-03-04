@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import io
+from fpdf import FPDF
 from engine.scheduler import TimetableEngine
 from database.crud import get_all_teachers, get_all_rooms, get_all_subjects, get_all_batches
 
@@ -43,7 +45,7 @@ def render_timetable_page(db_session):
         """)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Persistent storage for the generated schedule
+    # Persistent storage for the generated schedule - using session state
     if 'generated_schedule' not in st.session_state:
         st.session_state.generated_schedule = None
 
@@ -96,17 +98,22 @@ def render_timetable_page(db_session):
             df = df.sort_values(['Batch / Class', 'Day', 'Time']).reset_index(drop=True)
 
             # 3. Create interactive tabs with IUB Visuals
-            tab1, tab2, tab3, tab4 = st.tabs(["🎓 View by Batch", "👨‍🏫 View by Teacher", "🏫 View by Room", "🗄️ Master Table"])
+            tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                "🎓 View by Batch", 
+                "👨‍🏫 View by Teacher", 
+                "🏫 View by Room", 
+                "🗄️ Master Table",
+                "📥 Download / Export"
+            ])
             
             with tab1:
                 batch_list = df['Batch / Class'].unique()
                 selected_batch = st.selectbox("Select Batch to View", batch_list)
                 batch_df = df[df['Batch / Class'] == selected_batch]
-                # Pivot table to make it look like a classic timetable grid
                 try:
                     pivot_batch = batch_df.pivot(index="Time", columns="Day", values="Subject").fillna("-")
                     st.markdown(f"### Schedule for {selected_batch}")
-                    st.table(pivot_batch) # Using st.table for a cleaner static look for IUB
+                    st.table(pivot_batch)
                 except:
                     st.dataframe(batch_df)
 
@@ -125,12 +132,53 @@ def render_timetable_page(db_session):
             with tab4:
                 st.markdown("### Full Department Master Schedule")
                 st.dataframe(df, use_container_width=True)
+
+            with tab5:
+                st.subheader("Official Timetable Exports")
+                st.write("Download the generated schedule in your preferred format:")
                 
-                # Export functionality
+                exp_col1, exp_col2, exp_col3 = st.columns(3)
+
+                # --- CSV Export ---
                 csv = df.to_csv(index=False).encode('utf-8')
-                st.download_button(
-                    label="📥 Download Official Timetable (CSV)",
+                exp_col1.download_button(
+                    label="📥 Download CSV",
                     data=csv,
-                    file_name='iub_ai_timetable.csv',
+                    file_name='iub_timetable.csv',
                     mime='text/csv',
+                    use_container_width=True
+                )
+
+                # --- Excel Export (XLSX) ---
+                excel_buffer = io.BytesIO()
+                with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                    df.to_excel(writer, index=False, sheet_name='IUB_Timetable')
+                exp_col2.download_button(
+                    label="📥 Download Excel (XLSX)",
+                    data=excel_buffer.getvalue(),
+                    file_name='iub_timetable.xlsx',
+                    mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    use_container_width=True
+                )
+
+                # --- PDF Export ---
+                pdf = FPDF()
+                pdf.add_page()
+                pdf.set_font("Arial", 'B', 16)
+                pdf.cell(200, 10, txt="IUB AI Department Timetable", ln=True, align='C')
+                pdf.set_font("Arial", size=10)
+                pdf.ln(10)
+                
+                # Simplified table for PDF
+                for index, row in df.iterrows():
+                    text = f"{row['Day']} | {row['Time']} | {row['Batch / Class']} | {row['Subject']} | {row['Teacher']} | {row['Room']}"
+                    pdf.cell(0, 10, txt=text, ln=True)
+
+                pdf_output = pdf.output(dest='S').encode('latin-1')
+                exp_col3.download_button(
+                    label="📥 Download PDF",
+                    data=pdf_output,
+                    file_name="iub_timetable.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
                 )
