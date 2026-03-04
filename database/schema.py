@@ -27,7 +27,7 @@ batch_subject_association = Table(
 # CORE ENTITY MODELS
 # -------------------------------------------------------------------
 
-class GlobalSetting(Base):
+class GlobalSettings(Base):
     """Stores the dynamic dashboard rules like Uni timings and Jumma breaks."""
     __tablename__ = 'global_settings'
     
@@ -52,12 +52,13 @@ class Teacher(Base):
     subjects_can_teach = relationship('Subject', secondary=teacher_subject_association, back_populates='capable_teachers')
 
 class Room(Base):
+    """Physical space availability and capacity."""
     __tablename__ = 'rooms'
     id = Column(Integer, primary_key=True)
     room_name = Column(String, unique=True, nullable=False)
     capacity = Column(Integer, nullable=False)
     is_lab = Column(Boolean, default=False)
-    # New Fields
+    # Fields for specific room operating hours
     available_from = Column(Time, default=time(8, 0))
     available_to = Column(Time, default=time(16, 0))
 
@@ -87,19 +88,16 @@ class BatchSection(Base):
     # Relationships
     curriculum_subjects = relationship('Subject', secondary=batch_subject_association, back_populates='batches_taking')
 
-
 # -------------------------------------------------------------------
 # DATABASE SETUP FUNCTION
 # -------------------------------------------------------------------
 def init_db(database_url="sqlite:///timetable.db"):
     """Initializes the database and creates tables if they don't exist."""
-    # ADDED: connect_args={'check_same_thread': False} to prevent Streamlit threading crashes
     engine = create_engine(database_url, echo=False, connect_args={'check_same_thread': False})
     Base.metadata.create_all(engine)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     return SessionLocal()
 
-# If run directly, it will create the SQLite database file in the root folder.
 if __name__ == "__main__":
     db_session = init_db()
     print("✅ Database schema initialized successfully. 'timetable.db' created.")
