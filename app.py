@@ -96,6 +96,10 @@ st.markdown("---")
 # ROUTING (Loading the correct page based on selection)
 # -------------------------------------------------------------------
 
+# -------------------------------------------------------------------
+# ROUTING (Loading the correct page based on selection)
+# -------------------------------------------------------------------
+
 if selection == "📊 Dashboard Overview":
     from ui.views import dashboard
     dashboard.render_dashboard_page(st.session_state.db_session)
@@ -121,9 +125,12 @@ elif selection == "🎓 Manage Batches":
     batches.render_batches_page(st.session_state.db_session)
 
 elif selection == "🚀 Generate Timetable":
-    # Now correctly importing and rendering the generator page
     from ui.views import timetable
     timetable.render_timetable_page(st.session_state.db_session)
+
+elif selection == "📥 Bulk Import":
+    from ui.views import import_data
+    import_data.render_import_page(st.session_state.db_session)
 
 # Footer
 st.markdown("""
