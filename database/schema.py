@@ -88,6 +88,18 @@ class BatchSection(Base):
     # Relationships
     curriculum_subjects = relationship('Subject', secondary=batch_subject_association, back_populates='batches_taking')
 
+class GlobalSettings(Base):
+    __tablename__ = 'global_settings'
+    id = Column(Integer, primary_key=True)
+    uni_open_time = Column(Time, default=time(8, 0))
+    uni_close_time = Column(Time, default=time(16, 0))
+    jumma_break_start = Column(Time, default=time(13, 0))
+    jumma_break_end = Column(Time, default=time(14, 30))
+    credit_hour_duration_mins = Column(Integer, default=60)
+    # NEW: Max consecutive hours for a subject in a single day
+    max_hours_per_day = Column(Integer, default=2) 
+    sunday_off = Column(Boolean, default=True)
+
 # -------------------------------------------------------------------
 # DATABASE SETUP FUNCTION
 # -------------------------------------------------------------------
@@ -101,3 +113,5 @@ def init_db(database_url="sqlite:///timetable.db"):
 if __name__ == "__main__":
     db_session = init_db()
     print("✅ Database schema initialized successfully. 'timetable.db' created.")
+
+
