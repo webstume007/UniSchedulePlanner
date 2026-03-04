@@ -2,7 +2,21 @@ import streamlit as st
 from database.crud import get_all_teachers, get_all_rooms, get_all_subjects, get_all_batches
 
 def render_dashboard_page(db_session):
-    st.title("📊 AI Department Timetable Dashboard")
+    # IUB Specific Styling
+    st.markdown("""
+        <style>
+        .dash-title { color: #006837; font-weight: bold; margin-bottom: 0px; }
+        .metric-card {
+            background-color: #f0f9f4;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #006837;
+            text-align: center;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<h1 class='dash-title'>📊 AI Department Timetable Dashboard</h1>", unsafe_allow_html=True)
     st.markdown("Overview of the scheduling system data and readiness for timetable generation.")
 
     # Fetch all data to calculate metrics
@@ -14,11 +28,17 @@ def render_dashboard_page(db_session):
     # ==========================================
     # METRICS ROW
     # ==========================================
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Teachers", len(teachers))
-    col2.metric("Total Rooms & Labs", len(rooms))
-    col3.metric("Total Curriculum Subjects", len(subjects))
-    col4.metric("Active Batches/Sections", len(batches))
+    # We use custom HTML columns to make them look more like IUB brand cards
+    m1, m2, m3, m4 = st.columns(4)
+    
+    with m1:
+        st.markdown(f"<div class='metric-card'><h3>👨‍🏫</h3><p>Teachers</p><h2>{len(teachers)}</h2></div>", unsafe_allow_html=True)
+    with m2:
+        st.markdown(f"<div class='metric-card'><h3>🏫</h3><p>Rooms & Labs</p><h2>{len(rooms)}</h2></div>", unsafe_allow_html=True)
+    with m3:
+        st.markdown(f"<div class='metric-card'><h3>📚</h3><p>Subjects</p><h2>{len(subjects)}</h2></div>", unsafe_allow_html=True)
+    with m4:
+        st.markdown(f"<div class='metric-card'><h3>🎓</h3><p>Batches</p><h2>{len(batches)}</h2></div>", unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -26,7 +46,7 @@ def render_dashboard_page(db_session):
     # READINESS CHECKLIST
     # ==========================================
     st.subheader("✅ System Readiness Check")
-    st.markdown("The optimization engine requires all four pillars of data to generate a clash-free schedule.")
+    st.info("The AI optimization engine requires data in all four pillars below to compute a valid, clash-free schedule.")
 
     # Check conditions
     has_rooms = len(rooms) > 0
@@ -37,30 +57,34 @@ def render_dashboard_page(db_session):
     req_col1, req_col2 = st.columns(2)
     
     with req_col1:
-        st.checkbox("Rooms & Labs Configured", value=has_rooms, disabled=True)
-        st.checkbox("Curriculum (Subjects) Defined", value=has_subjects, disabled=True)
+        st.checkbox("Rooms & Labs Configured", value=has_rooms, disabled=True, key="chk_rooms")
+        st.checkbox("Curriculum (Subjects) Defined", value=has_subjects, disabled=True, key="chk_subs")
         
     with req_col2:
-        st.checkbox("Faculty (Teachers) Added", value=has_teachers, disabled=True)
-        st.checkbox("Batches & Sections Created", value=has_batches, disabled=True)
+        st.checkbox("Faculty (Teachers) Added", value=has_teachers, disabled=True, key="chk_tea")
+        st.checkbox("Batches & Sections Created", value=has_batches, disabled=True, key="chk_bat")
 
     if has_rooms and has_subjects and has_teachers and has_batches:
-        st.success("🌟 All data pillars are present! The system is ready to compute timetables.")
+        st.success("🌟 **System Ready!** All data pillars are present. You can now proceed to the 'Generate Timetable' section.")
     else:
-        st.warning("⚠️ Please complete the missing data steps from the sidebar before navigating to the generator.")
+        st.warning("⚠️ **Missing Data:** Please complete the required steps in the navigation menu before attempting to generate a schedule.")
         
     st.markdown("---")
 
     # ==========================================
     # QUICK INSIGHTS
     # ==========================================
-    st.subheader("🔍 Quick Insights")
+    
+
+[Image of data visualization dashboard metrics]
+
+    st.subheader("🔍 Department Insights")
     insight_col1, insight_col2 = st.columns(2)
     
     with insight_col1:
         lab_rooms = sum(1 for r in rooms if r.is_lab)
-        st.info(f"🧪 **Lab Resources:** {lab_rooms} dedicated computer labs out of {len(rooms)} total rooms.")
+        st.info(f"🧪 **Lab Resources:** {lab_rooms} dedicated computer labs out of {len(rooms)} total rooms available.")
         
     with insight_col2:
         total_students = sum(b.student_strength for b in batches)
-        st.info(f"👥 **Student Load:** Scheduling for approximately {total_students} students across all active batches.")
+        st.info(f"👥 **Student Load:** The AI will schedule for approximately {total_students} students across all sections.")
