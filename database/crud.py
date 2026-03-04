@@ -12,13 +12,15 @@ def get_global_settings(db: Session):
         db.refresh(settings)
     return settings
 
-def update_global_settings(db: Session, open_t, close_t, j_start, j_end, duration, sun_off):
+# Updated to include max_hours
+def update_global_settings(db: Session, open_t, close_t, j_start, j_end, duration, max_hours, sun_off):
     settings = get_global_settings(db)
     settings.uni_open_time = open_t
     settings.uni_close_time = close_t
     settings.jumma_break_start = j_start
     settings.jumma_break_end = j_end
     settings.credit_hour_duration_mins = duration
+    settings.max_hours_per_day = max_hours  # NEW
     settings.sunday_off = sun_off
     db.commit()
     return True
