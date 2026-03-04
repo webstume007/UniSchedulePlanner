@@ -1,4 +1,12 @@
+import sys
+import os
 import streamlit as st
+
+# -------------------------------------------------------------------
+# CRITICAL: SYSTEM PATH FIX (Prevents ImportErrors on Streamlit Cloud)
+# -------------------------------------------------------------------
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from database.schema import init_db
 
 # -------------------------------------------------------------------
@@ -60,7 +68,6 @@ menu_options = [
     "📥 Bulk Import"
 ]
 
-# This MUST come before the if/elif routing logic
 selection = st.segmented_control(
     "Select Page", 
     options=menu_options, 
