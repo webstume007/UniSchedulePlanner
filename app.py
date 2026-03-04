@@ -43,10 +43,12 @@ st.sidebar.info("Developed for The Islamia University of Bahawalpur (IUB) - AI D
 # -------------------------------------------------------------------
 # ROUTING (Loading the correct page based on selection)
 # -------------------------------------------------------------------
-# We will create these view files one by one. For now, we will link the Settings page.
 
-if selection == "⚙️ Global Settings":
-    # Importing the view locally to prevent circular imports
+if selection == "📊 Dashboard Overview":
+    from ui.views import dashboard
+    dashboard.render_dashboard_page(st.session_state.db_session)
+
+elif selection == "⚙️ Global Settings":
     from ui.views import settings 
     settings.render_settings_page(st.session_state.db_session)
 
@@ -55,17 +57,17 @@ elif selection == "🏫 Manage Rooms":
     rooms.render_rooms_page(st.session_state.db_session)
 
 elif selection == "📚 Manage Subjects":
-    st.title("📚 Manage Subjects")
-    st.info("Subject management interface will be built next.")
+    from ui.views import subjects
+    subjects.render_subjects_page(st.session_state.db_session)
 
 elif selection == "👨‍🏫 Manage Teachers":
-    st.title("👨‍🏫 Manage Teachers")
-    st.info("Teacher management interface will be built next.")
+    from ui.views import teachers
+    teachers.render_teachers_page(st.session_state.db_session)
 
 elif selection == "🎓 Manage Batches":
-    st.title("🎓 Manage Batches")
-    st.info("Batch & Section management interface will be built next.")
+    from ui.views import batches
+    batches.render_batches_page(st.session_state.db_session)
 
 elif selection == "🚀 Generate Timetable":
     st.title("🚀 Generate Timetable")
-    st.info("The optimization engine and visual timetable will be connected here.")
+    st.info("The visual grid and algorithm engine will be connected here next.")
